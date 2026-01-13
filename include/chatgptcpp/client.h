@@ -11,6 +11,13 @@ struct Message {
   std::string content;
 };
 
+struct ResponseMessage {
+  std::string role;
+  std::string content;
+  std::string think;
+  std::string raw_content;
+};
+
 struct ChatCompletionRequest {
   std::string model;
   std::vector<Message> messages;
@@ -20,7 +27,7 @@ struct ChatCompletionRequest {
 
 struct ChatCompletionChoice {
   int index = 0;
-  Message message;
+  ResponseMessage message;
   std::string finish_reason;
 };
 

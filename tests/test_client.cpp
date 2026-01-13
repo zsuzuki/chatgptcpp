@@ -11,7 +11,7 @@ int main() {
     "choices": [
       {
         "index": 0,
-        "message": { "role": "assistant", "content": "Hello there!" },
+        "message": { "role": "assistant", "content": "<think>analysis</think>Hello there!" },
         "finish_reason": "stop"
       },
       {
@@ -35,7 +35,9 @@ int main() {
   assert(response.choices.size() == 2);
   assert(response.choices[0].index == 0);
   assert(response.choices[0].message.role == "assistant");
+  assert(response.choices[0].message.raw_content == "<think>analysis</think>Hello there!");
   assert(response.choices[0].message.content == "Hello there!");
+  assert(response.choices[0].message.think == "analysis");
   assert(response.choices[0].finish_reason == "stop");
   assert(response.choices[1].index == 1);
   assert(response.choices[1].message.role == "assistant");

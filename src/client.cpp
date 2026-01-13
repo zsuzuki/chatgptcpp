@@ -35,6 +35,36 @@ std::string ensure_trailing_slash(std::string base_url) {
   return base_url;
 }
 
+struct ThinkSplit {
+  std::string cleaned;
+  std::string think;
+};
+
+ThinkSplit split_think_tags(std::string_view content) {
+  const std::string_view open_tag = "<think>";
+  const std::string_view close_tag = "</think>";
+
+  ThinkSplit result;
+  size_t pos = 0;
+  while (true) {
+    const size_t start = content.find(open_tag, pos);
+    if (start == std::string_view::npos) {
+      result.cleaned.append(content.substr(pos));
+      break;
+    }
+    result.cleaned.append(content.substr(pos, start - pos));
+    const size_t end = content.find(close_tag, start + open_tag.size());
+    if (end == std::string_view::npos) {
+      result.cleaned.append(content.substr(start));
+      break;
+    }
+    result.think.append(content.substr(start + open_tag.size(),
+                                       end - (start + open_tag.size())));
+    pos = end + close_tag.size();
+  }
+  return result;
+}
+
 }  // namespace
 
 OpenAIClient::OpenAIClient(std::string api_key, std::string base_url)
@@ -156,7 +186,10 @@ ChatCompletionResponse OpenAIClient::parse_chat_completion_response(std::string_
       if (choice.contains("message") && choice["message"].is_object()) {
         const auto& message = choice["message"];
         parsed_choice.message.role = message.value("role", "");
-        parsed_choice.message.content = message.value("content", "");
+        parsed_choice.message.raw_content = message.value("content", "");
+        const auto split = split_think_tags(parsed_choice.message.raw_content);
+        parsed_choice.message.content = split.cleaned;
+        parsed_choice.message.think = split.think;
       }
       response.choices.push_back(std::move(parsed_choice));
     }
@@ -185,7 +218,7 @@ bool append_assistant_message(ChatCompletionRequest& request,
   if (message.role != "assistant") {
     return false;
   }
-  request.messages.push_back(message);
+  request.messages.push_back({message.role, message.content});
   return true;
 }
 
